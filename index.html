@@ -79,13 +79,13 @@
                 <li><b>Aralık Belirle:</b> Tek seferde 3-5 bölüm çevirmeniz önerilir (Örn: 1-5). Bu, Google limitlerine takılmanızı önler.</li>
                 <li><b>Çeviriyi Başlat:</b> Butona basın ve bekleyin. İşlem bitince <b>sesli ve görsel uyarı</b> alacaksınız.</li>
                 <li><b>Hafıza:</b> Çeviriler <b>IndexedDB</b>'ye kaydedilir. Sayfayı kapatsanız da silinmez.</li>
-                <li><b>EPUB Oluştur:</b> Hafızadaki bölümleri orijinal başlıkları altında birleştirerek Türkçe EPUB üretir.</li>
+                <li><b>EPUB Oluştur:</b> Hafızadaki bölümleri hiçbir ek başlık eklemeden orijinal yapısında birleştirir.</li>
             </ul>
         </div>
     </div>
 </div>
 
-<div class="preview-panel"><div class="header-row"><h3 style="margin:0;">🔍 Yapı Analizi</h3><select onchange="document.getElementById('previewContent').style.fontSize = this.value"><option value="13px">Küçük</option><option value="16px">Orta</option><option value="20px">Büyük</option></select></div><div id="previewContent">Analiz sonuçları burada görünecek.</div></div>
+<div class="preview-panel"><div class="header-row"><h3 style="margin:0;">🔍 Yapı Analizi</h3><select onchange="document.getElementById('previewContent').style.fontSize = this.value"><option value="13px">Küçük</option><option value="16px">Orta</option><option value="18px">Büyük</option></select></div><div id="previewContent">Analiz sonuçları burada görünecek.</div></div>
 
 <script>
     const db = new Dexie("SmartEpubDB_V2");
@@ -106,19 +106,19 @@
             for (let i = 0; i < spine.length; i++) {
                 const section = spine.get(i); await section.load(book.load.bind(book));
                 const text = section.document.body.innerText;
-                const originalTitle = `Bölüm ${i+1}`;
+                // Görünür başlık sadece bizim panelimiz için kalsın
+                const internalLabel = `Kısım ${i+1}`; 
                 if (text.length > MAX_CHUNK_SIZE) {
                     const subChunks = text.match(new RegExp('[\\s\\S]{1,' + MAX_CHUNK_SIZE + '}', 'g')) || [];
                     subChunks.forEach((chunk, subIdx) => {
                         finalChapters.push({ 
                             index: i, subIdx: subIdx, 
-                            title: `${originalTitle}.${subIdx+1}`, 
-                            parentTitle: originalTitle,
+                            title: `${internalLabel}.${subIdx+1}`, 
                             content: chunk 
                         });
                     });
                 } else {
-                    finalChapters.push({ index: i, subIdx: 0, title: originalTitle, parentTitle: originalTitle, content: text });
+                    finalChapters.push({ index: i, subIdx: 0, title: internalLabel, content: text });
                 }
                 section.unload();
             }
@@ -151,7 +151,6 @@
             await db.translations.add({ 
                 bookTitle: bookTitle, index: i, 
                 title: finalChapters[i].title, 
-                parentTitle: finalChapters[i].parentTitle,
                 parentIndex: finalChapters[i].index,
                 content: translated 
             });
@@ -179,16 +178,14 @@
         const allTranslated = await db.translations.where({bookTitle: bookTitle}).sortBy('index');
         if(allTranslated.length === 0) return alert("Hafıza boş!");
 
-        // Akıllı Birleştirme Mantığı
         const mergedChapters = [];
         allTranslated.forEach(item => {
             let existing = mergedChapters.find(m => m.parentIndex === item.parentIndex);
             if (existing) {
-                existing.content += "<br/><br/>" + item.content;
+                existing.content += " " + item.content; // Sadece boşlukla birleştir (başlık yok)
             } else {
                 mergedChapters.push({
                     parentIndex: item.parentIndex,
-                    parentTitle: item.parentTitle,
                     content: item.content
                 });
             }
@@ -202,14 +199,15 @@
         let manifest = ""; let spine = "";
         mergedChapters.forEach((ch, i) => {
             const fileName = `ch_${ch.parentIndex}.xhtml`;
-            oebps.file(fileName, `<?xml version="1.0" encoding="utf-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>${ch.parentTitle}</title></head><body><h2>${ch.parentTitle}</h2><p>${ch.content.replace(/\n/g, '<br/>')}</p></body></html>`);
+            // DİKKAT: Burada h2 gibi dış başlıkları tamamen kaldırdık, sadece saf metin.
+            oebps.file(fileName, `<?xml version="1.0" encoding="utf-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Section</title></head><body><p>${ch.content.replace(/\n/g, '<br/>')}</p></body></html>`);
             manifest += `<item id="i${ch.parentIndex}" href="${fileName}" media-type="application/xhtml+xml"/>\n`;
-            spine += `<itemref idref="i${ch.parentIndex}"/>\n`;
+            spine += `<itemref idref="i${ch.index || i}"/>\n`;
         });
 
         const opf = `<?xml version="1.0" encoding="utf-8"?><package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${bookTitle} (TR)</dc:title><dc:language>tr</dc:language></metadata><manifest>${manifest}<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/></manifest><spine toc="ncx">${spine}</spine></package>`;
         oebps.file("content.opf", opf);
-        const ncx = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>${mergedChapters.map((c,i)=>`<navPoint id="n${i}" playOrder="${i+1}"><navLabel><text>${c.parentTitle}</text></navLabel><content src="ch_${c.parentIndex}.xhtml"/></navPoint>`).join('')}</navMap></ncx>`;
+        const ncx = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>${mergedChapters.map((c,i)=>`<navPoint id="n${i}" playOrder="${i+1}"><navLabel><text>Part ${i+1}</text></navLabel><content src="ch_${c.parentIndex}.xhtml"/></navPoint>`).join('')}</navMap></ncx>`;
         oebps.file("toc.ncx", ncx);
 
         const blob = await zip.generateAsync({ type: "blob", mimeType: "application/epub+zip" });
