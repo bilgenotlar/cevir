@@ -41,10 +41,13 @@
         .button-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         input[type="number"] { width: 55px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--text); text-align: center; }
         .badge { display: inline-block; background: #34495e; color: white; padding: 3px 8px; border-radius: 10px; font-size: 11px; margin: 2px; }
+        
+        /* Sabitlenen Geniş Rehber Bölümü */
         .guide-container { margin-top: auto; padding-top: 20px; }
         .guide-box { padding: 20px; background: #fffdf0; border: 1px solid #f1e7bc; border-radius: 12px; font-size: 14px; color: #444; line-height: 1.6; }
         [data-theme="dark"] .guide-box { background: #2a2822; border-color: #444; color: #ccc; }
         .guide-box h4 { margin: 0 0 12px 0; color: #856404; font-size: 16px; border-bottom: 1px solid #f1e7bc; padding-bottom: 5px; }
+        [data-theme="dark"] .guide-box h4 { color: #d4af37; border-color: #555; }
     </style>
 </head>
 <body>
@@ -70,7 +73,8 @@
     <div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
     <div id="dbStats" style="margin-bottom: 5px; font-size: 14px;"></div>
     <div id="chapterBadges"></div>
-    <button onclick="deleteDatabase()" style="background:none; border:none; color: #e74c3c; cursor:pointer; font-size:11px; text-decoration:underline; width:fit-content; margin: 10px 0;">Veritabanını Sıfırla</button>
+    <button onclick="deleteDatabase()" style="background:none; border:none; color: #e74c3c; cursor:pointer; font-size:11px; text-decoration:underline; width:fit-content; margin: 10px 0; box-shadow:none; transform:none;">Veritabanını Sıfırla</button>
+
     <div class="guide-container">
         <div class="guide-box">
             <h4>🚀 Hızlı Kullanım Rehberi</h4>
@@ -81,11 +85,14 @@
                 <li><b>Hafıza:</b> Çeviriler <b>IndexedDB</b>'ye kaydedilir. Sayfayı kapatsanız da silinmez.</li>
                 <li><b>EPUB Oluştur:</b> Hafızadaki bölümleri hiçbir ek başlık eklemeden orijinal yapısında birleştirir.</li>
             </ul>
+            <p style="margin: 10px 0 0 0; font-size: 12px; color: #856404; font-style: italic; border-top: 1px solid rgba(133,100,4,0.1); padding-top: 10px;">
+                <b>İpucu:</b> Google engeli almamak için her 5 bölümden sonra kısa bir mola verin. Hata alırsanız internetinizi yenileyip devam edebilirsiniz.
+            </p>
         </div>
     </div>
 </div>
 
-<div class="preview-panel"><div class="header-row"><h3 style="margin:0;">🔍 Yapı Analizi</h3><select onchange="document.getElementById('previewContent').style.fontSize = this.value"><option value="13px">Küçük</option><option value="16px">Orta</option><option value="18px">Büyük</option></select></div><div id="previewContent">Analiz sonuçları burada görünecek.</div></div>
+<div class="preview-panel"><div class="header-row"><h3 style="margin:0;">🔍 Yapı Analizi</h3><select onchange="document.getElementById('previewContent').style.fontSize = this.value"><option value="13px">Küçük Font</option><option value="16px">Orta Font</option><option value="20px">Büyük Font</option></select></div><div id="previewContent">Analiz sonuçları burada görünecek.</div></div>
 
 <script>
     const db = new Dexie("SmartEpubDB_V2");
@@ -106,16 +113,11 @@
             for (let i = 0; i < spine.length; i++) {
                 const section = spine.get(i); await section.load(book.load.bind(book));
                 const text = section.document.body.innerText;
-                // Görünür başlık sadece bizim panelimiz için kalsın
                 const internalLabel = `Kısım ${i+1}`; 
                 if (text.length > MAX_CHUNK_SIZE) {
                     const subChunks = text.match(new RegExp('[\\s\\S]{1,' + MAX_CHUNK_SIZE + '}', 'g')) || [];
                     subChunks.forEach((chunk, subIdx) => {
-                        finalChapters.push({ 
-                            index: i, subIdx: subIdx, 
-                            title: `${internalLabel}.${subIdx+1}`, 
-                            content: chunk 
-                        });
+                        finalChapters.push({ index: i, subIdx: subIdx, title: `${internalLabel}.${subIdx+1}`, content: chunk });
                     });
                 } else {
                     finalChapters.push({ index: i, subIdx: 0, title: internalLabel, content: text });
@@ -148,12 +150,7 @@
             const miniChunks = finalChapters[i].content.match(/[\s\S]{1,1500}/g) || [];
             let translated = "";
             for(let mini of miniChunks) { translated += await translateAPI(mini) + " "; await new Promise(r => setTimeout(r, 1000)); }
-            await db.translations.add({ 
-                bookTitle: bookTitle, index: i, 
-                title: finalChapters[i].title, 
-                parentIndex: finalChapters[i].index,
-                content: translated 
-            });
+            await db.translations.add({ bookTitle: bookTitle, index: i, title: finalChapters[i].title, parentIndex: finalChapters[i].index, content: translated });
             updateDBStats();
             document.getElementById('progress').style.width = ((i - (startVal-1) + 1) / (endVal - startVal + 1) * 100) + "%";
         }
@@ -172,7 +169,7 @@
         document.getElementById('chapterBadges').innerHTML = all.sort((a,b)=>a.index-b.index).map(c => `<span class="badge">${c.title}</span>`).join('');
     }
 
-    async function deleteDatabase() { if(confirm("Tüm kayıtlar silinecek?")) { await db.translations.clear(); location.reload(); } }
+    async function deleteDatabase() { if(confirm("Kayıtlar silinsin mi?")) { await db.translations.clear(); location.reload(); } }
 
     async function generateEpub() {
         const allTranslated = await db.translations.where({bookTitle: bookTitle}).sortBy('index');
@@ -181,14 +178,8 @@
         const mergedChapters = [];
         allTranslated.forEach(item => {
             let existing = mergedChapters.find(m => m.parentIndex === item.parentIndex);
-            if (existing) {
-                existing.content += " " + item.content; // Sadece boşlukla birleştir (başlık yok)
-            } else {
-                mergedChapters.push({
-                    parentIndex: item.parentIndex,
-                    content: item.content
-                });
-            }
+            if (existing) { existing.content += " " + item.content; } 
+            else { mergedChapters.push({ parentIndex: item.parentIndex, content: item.content }); }
         });
 
         const zip = new JSZip();
@@ -198,16 +189,16 @@
         
         let manifest = ""; let spine = "";
         mergedChapters.forEach((ch, i) => {
-            const fileName = `ch_${ch.parentIndex}.xhtml`;
-            // DİKKAT: Burada h2 gibi dış başlıkları tamamen kaldırdık, sadece saf metin.
-            oebps.file(fileName, `<?xml version="1.0" encoding="utf-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Section</title></head><body><p>${ch.content.replace(/\n/g, '<br/>')}</p></body></html>`);
-            manifest += `<item id="i${ch.parentIndex}" href="${fileName}" media-type="application/xhtml+xml"/>\n`;
-            spine += `<itemref idref="i${ch.index || i}"/>\n`;
+            const fileSeq = i + 1;
+            const fileName = `ch_${fileSeq}.xhtml`;
+            oebps.file(fileName, `<?xml version="1.0" encoding="utf-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Part</title></head><body><p>${ch.content.replace(/\n/g, '<br/>')}</p></body></html>`);
+            manifest += `<item id="i${fileSeq}" href="${fileName}" media-type="application/xhtml+xml"/>\n`;
+            spine += `<itemref idref="i${fileSeq}"/>\n`;
         });
 
         const opf = `<?xml version="1.0" encoding="utf-8"?><package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${bookTitle} (TR)</dc:title><dc:language>tr</dc:language></metadata><manifest>${manifest}<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/></manifest><spine toc="ncx">${spine}</spine></package>`;
         oebps.file("content.opf", opf);
-        const ncx = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>${mergedChapters.map((c,i)=>`<navPoint id="n${i}" playOrder="${i+1}"><navLabel><text>Part ${i+1}</text></navLabel><content src="ch_${c.parentIndex}.xhtml"/></navPoint>`).join('')}</navMap></ncx>`;
+        const ncx = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>${mergedChapters.map((c,i)=>`<navPoint id="n${i+1}" playOrder="${i+1}"><navLabel><text>Part ${i+1}</text></navLabel><content src="ch_${i+1}.xhtml"/></navPoint>`).join('')}</navMap></ncx>`;
         oebps.file("toc.ncx", ncx);
 
         const blob = await zip.generateAsync({ type: "blob", mimeType: "application/epub+zip" });
@@ -215,8 +206,7 @@
         const link = document.createElement("a");
         link.href = url;
         link.download = `${bookTitle.replace(/\s+/g, '_')}_TR.epub`;
-        document.body.appendChild(link);
-        link.click();
+        document.body.appendChild(link); link.click();
         setTimeout(() => { document.body.removeChild(link); window.URL.revokeObjectURL(url); }, 100);
     }
 </script>
