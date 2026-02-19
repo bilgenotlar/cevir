@@ -2,142 +2,166 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Akıllı EPUB Çeviri İstasyonu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BookBridge | EPUB Çeviri İstasyonu</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <style>
-        :root { --bg: #f0f2f5; --panel: #ffffff; --text: #2c3e50; --border: #ddd; }
-        [data-theme="dark"] { --bg: #1a1a1a; --panel: #2d2d2d; --text: #e0e0e0; --border: #444; }
+        :root { --bg: #f0f2f5; --panel: #ffffff; --text: #2c3e50; --border: #ddd; --accent: #3498db; --shadow: rgba(0,0,0,0.1); }
+        [data-theme="dark"] { --bg: #1a1a1a; --panel: #2d2d2d; --text: #e0e0e0; --border: #444; --shadow: rgba(0,0,0,0.5); }
 
-        body { font-family: 'Segoe UI', sans-serif; max-width: 1200px; margin: auto; padding: 20px; background: var(--bg); color: var(--text); display: flex; gap: 20px; transition: 0.3s; }
-        .main-panel { flex: 2; background: var(--panel); padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 90vh; }
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: var(--bg); 
+            color: var(--text); 
+            display: flex; 
+            flex-direction: row; 
+            gap: 20px; 
+            transition: 0.3s;
+            overflow-x: hidden;
+        }
+
+        .top-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+
+        /* MOBİL DÜZENLEMELER */
+        @media (max-width: 850px) {
+            body { flex-direction: column; padding: 10px; }
+            .main-panel, .preview-panel { width: 100% !important; height: auto !important; }
+            .preview-panel { height: 400px !important; }
+            .top-row { justify-content: center; }
+            .custom-file-upload { width: 100% !important; }
+            /* Mobilde buton metnini kısaltan ayar */
+            .theme-text { display: none; } 
+        }
+
+        .main-panel { flex: 2; background: var(--panel); padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px var(--shadow); display: flex; flex-direction: column; min-height: 90vh; }
         .preview-panel { flex: 1; background: var(--panel); padding: 20px; border-radius: 15px; border: 1px solid var(--border); height: 90vh; overflow-y: auto; font-size: 13px; }
         
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--bg); padding-bottom: 15px; }
+        .brand-name { font-size: 1.8rem; font-weight: 800; color: var(--accent); letter-spacing: -1px; }
+
         .controls { background: var(--bg); padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid var(--border); }
         
-        @keyframes blink-success {
-            0% { background-color: #e8f4fd; }
-            50% { background-color: #27ae60; color: white; }
-            100% { background-color: #e8f4fd; }
+        button, .custom-file-upload { 
+            padding: 10px 20px; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            transition: all 0.2s ease; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px var(--shadow);
+            text-decoration: none;
         }
-        .blink { animation: blink-success 1s linear 5; }
 
-        .status-box { padding: 12px; background: #e8f4fd; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #3498db; color: #2c3e50; font-weight: 500; }
+        button:hover, .custom-file-upload:hover { transform: translateY(-2px); box-shadow: 0 8px 15px var(--shadow); }
+
+        .btn-blue, .custom-file-upload { background: var(--accent); color: white; }
+        .btn-green { background: #27ae60; color: white; }
+        .btn-theme { background: #9b59b6; color: white; font-size: 13px; padding: 8px 15px; gap: 5px; }
+        
+        #fileInput { display: none; }
+        .custom-file-upload { background: #34495e; width: auto; }
+
+        .status-box { padding: 12px; background: #e8f4fd; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid var(--accent); font-weight: 500; }
         .progress-bar { height: 10px; background: #eee; border-radius: 10px; overflow: hidden; margin: 10px 0; }
         .progress-fill { height: 100%; background: #27ae60; width: 0%; transition: 0.3s; }
         
-        .button-row { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; } /* Kaymayı önlemek için nowrap */
-        button { padding: 10px 16px; cursor: pointer; border: none; border-radius: 8px; font-weight: 600; transition: 0.2s; white-space: nowrap; }
-        .btn-blue { background: #3498db; color: white; }
-        .btn-green { background: #27ae60; color: white; }
-        .btn-theme { background: #9b59b6; color: white; padding: 5px 10px; font-size: 12px; }
-        
-        /* Input genişliğini sabitledik */
-        input[type="number"] { width: 45px; padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel); color: var(--text); text-align: center; }
-        select { padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel); color: var(--text); }
+        @keyframes blink-success { 0% { background: #e8f4fd; } 50% { background: #27ae60; color: white; } 100% { background: #e8f4fd; } }
+        .blink { animation: blink-success 1s linear 5; }
+
+        .button-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        input[type="number"] { width: 55px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--text); text-align: center; }
         
         .badge { display: inline-block; background: #34495e; color: white; padding: 3px 8px; border-radius: 10px; font-size: 11px; margin: 2px; }
-        
-        /* Birleştirilmiş Rehber Kutusu */
-        .combined-guide { margin-top: auto; padding: 15px; background: #fffdf0; border: 1px solid #f1e7bc; border-radius: 10px; font-size: 13px; color: #5d5d5d; }
-        [data-theme="dark"] .combined-guide { background: #333129; border-color: #555; color: #ccc; }
-        .combined-guide h4 { margin: 0 0 10px 0; color: #856404; }
-        [data-theme="dark"] .combined-guide h4 { color: #d4af37; }
+
+        /* Geniş Rehber Bölümü */
+        .guide-container { margin-top: auto; padding-top: 20px; }
+        .guide-box { padding: 20px; background: #fffdf0; border: 1px solid #f1e7bc; border-radius: 12px; font-size: 14px; color: #444; line-height: 1.6; }
+        [data-theme="dark"] .guide-box { background: #2a2822; border-color: #444; color: #ccc; }
+        .guide-box h4 { margin: 0 0 12px 0; color: #856404; font-size: 16px; border-bottom: 1px solid #f1e7bc; padding-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <div class="main-panel">
     <div class="header-row">
-        <h2>🧠 Akıllı EPUB Çeviri Fabrikası</h2>
-        <button class="btn-theme" onclick="toggleTheme()">🌓 Gece/Gündüz Modu</button>
+        <span class="brand-name">BookBridge</span>
+        <button class="btn-theme" onclick="toggleTheme()">
+            🌓 <span class="theme-text">Gece/Gündüz</span> Mod
+        </button>
     </div>
 
-    <input type="file" id="fileInput" accept=".epub" onchange="loadAndAnalyzeEpub()">
-    
-    <div id="bookMeta" style="margin-top:15px; display:none;">
-        <strong>📖 Kitap:</strong> <span id="metaTitle">-</span> | 
-        <strong>📑 Toplam Parça:</strong> <span id="metaTotal">-</span>
+    <div class="top-row">
+        <label for="fileInput" class="custom-file-upload">📂 EPUB Dosyası Seç</label>
+        <input type="file" id="fileInput" accept=".epub" onchange="loadAndAnalyzeEpub()">
+        
+        <div id="bookMeta" style="display:none; font-size: 14px;">
+            <strong>📖 Kitap:</strong> <span id="metaTitle">-</span> | <strong>📑 Parça:</strong> <span id="metaTotal">-</span>
+        </div>
     </div>
 
     <div class="controls">
         <div class="button-row">
-            Aralık: 
-            <input type="number" id="startRange" value="1" min="1"> 
-            - 
-            <input type="number" id="endRange" value="1" min="1">
+            Aralık: <input type="number" id="startRange" value="1" min="1"> - <input type="number" id="endRange" value="1" min="1">
             <button class="btn-blue" id="startBtn" onclick="processTranslation()">Çeviriyi Başlat</button>
             <button class="btn-green" onclick="generateEpub()">Çevirisi Tamamlananlardan Epub Oluştur</button>
         </div>
     </div>
 
-    <div id="status" class="status-box">Kitap yüklenmesi bekleniyor...</div>
+    <div id="status" class="status-box">Lütfen bir dosya seçin...</div>
     <div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
     
     <div id="dbStats" style="margin-bottom: 5px; font-size: 14px;"></div>
     <div id="chapterBadges"></div>
     
-    <button onclick="deleteDatabase()" style="background:none; border:none; color: #e74c3c; cursor:pointer; font-size:11px; text-decoration:underline; width:fit-content; margin: 10px 0;">Veritabanını Sıfırla</button>
+    <button onclick="deleteDatabase()" style="background:none; border:none; color: #e74c3c; cursor:pointer; font-size:11px; text-decoration:underline; width:fit-content; margin: 10px 0; box-shadow:none; transform:none;">Veritabanını Sıfırla</button>
 
-    <div class="combined-guide">
-        <h4>🚀 Hızlı Kullanım Rehberi & İpuçları</h4>
-        <ol style="margin: 0; padding-left: 20px; line-height: 1.5; margin-bottom: 10px;">
-            <li><b>Dosya Yükle:</b> EPUB dosyanızı seçin. Yazılım bölümleri otomatik analiz eder.</li>
-            <li><b>Aralık Belirle:</b> Tek seferde 3-5 bölüm çevirmeniz önerilir (Örn: 1-5).</li>
-            <li><b>Çeviriyi Başlat:</b> Butona basın ve bekleyin. İşlem bitince <b>sesli ve görsel uyarı</b> alacaksınız.</li>
-            <li><b>Hafıza:</b> Çeviriler <b>IndexedDB</b>'ye kaydedilir. Sayfayı kapatsanız da silinmez.</li>
-            <li><b>Epub Oluştur:</b> Hafızadaki bölümleri birleştirip Türkçe EPUB yapmak için yeşil butonu kullanın.</li>
-        </ol>
-        <p style="margin:0; font-style: italic; font-size: 12px; color: #856404;"><b>Önemli:</b> Google engeline takılmamak için çok uzun süre aralıksız çeviri yapmayın. Hata alırsanız internetinizi yenileyip devam edebilirsiniz.</p>
+    <div class="guide-container">
+        <div class="guide-box">
+            <h4>🚀 Hızlı Kullanım Rehberi</h4>
+            <ul style="margin: 0; padding-left: 20px;">
+                <li><b>Dosya Seç:</b> EPUB dosyanızı yükleyin. Yazılım bölümleri otomatik analiz eder.</li>
+                <li><b>Aralık Belirle:</b> Tek seferde 3-5 bölüm çevirmeniz önerilir (Örn: 1-5). Bu, Google limitlerine takılmanızı önler.</li>
+                <li><b>Çeviriyi Başlat:</b> Butona basın ve bekleyin. İşlem bitince <b>sesli ve görsel uyarı</b> alacaksınız.</li>
+                <li><b>Hafıza:</b> Çeviriler <b>IndexedDB</b>'ye kaydedilir. Sayfayı kapatsanız da silinmez.</li>
+                <li><b>EPUB Oluştur:</b> Hafızadaki tüm bölümleri tek bir Türkçe EPUB yapmak için yeşil butonu kullanın.</li>
+            </ul>
+        </div>
     </div>
 </div>
 
 <div class="preview-panel">
     <div class="header-row">
-        <h3>🔍 Yapı Analizi</h3>
+        <h3 style="margin:0;">🔍 Yapı Analizi</h3>
         <select onchange="document.getElementById('previewContent').style.fontSize = this.value">
             <option value="13px">Küçük Font</option>
             <option value="16px">Orta Font</option>
-            <option value="20px">Büyük Font</option>
+            <option value="18px">Büyük Font</option>
         </select>
     </div>
     <div id="previewContent">Analiz sonuçları burada görünecek.</div>
 </div>
 
 <script>
-    // --- DATABASE & DEĞİŞKENLER ---
+    // Önceki fonksiyonların (Dexie, Analiz, Çeviri, Paketleme) tamamı burada yer alıyor.
     const db = new Dexie("SmartEpubDB_V2");
     db.version(1).stores({ translations: '++id, bookTitle, index, title, content' });
+    let finalChapters = []; let bookTitle = ""; const MAX_CHUNK_SIZE = 8000;
 
-    let finalChapters = [];
-    let bookTitle = "";
-    const MAX_CHUNK_SIZE = 8000;
-
-    // --- SES BİLDİRİMİ ---
     function playSuccessSound() {
-        try {
-            const context = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = context.createOscillator();
-            const gain = context.createGain();
-            oscillator.connect(gain);
-            gain.connect(context.destination);
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(880, context.currentTime);
-            gain.gain.setValueAtTime(0.1, context.currentTime);
-            oscillator.start();
-            oscillator.stop(context.currentTime + 0.3);
-        } catch(e) { console.log("Ses çalınamadı"); }
+        try { const context = new (window.AudioContext || window.webkitAudioContext)(); const oscillator = context.createOscillator(); const gain = context.createGain(); oscillator.connect(gain); gain.connect(context.destination); oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(880, context.currentTime); gain.gain.setValueAtTime(0.05, context.currentTime); oscillator.start(); oscillator.stop(context.currentTime + 0.3); } catch(e) {}
     }
 
-    // --- GECE MODU ---
-    function toggleTheme() {
-        const body = document.body;
-        body.setAttribute('data-theme', body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-    }
+    function toggleTheme() { const body = document.body; body.setAttribute('data-theme', body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
 
-    // --- EPUB ANALİZ ---
     async function loadAndAnalyzeEpub() {
         const file = document.getElementById('fileInput').files[0];
         if(!file) return;
@@ -147,7 +171,6 @@
             await book.ready;
             bookTitle = book.package.metadata.title || "Adsiz_Kitap";
             document.getElementById('metaTitle').innerText = bookTitle;
-            
             finalChapters = [];
             const spine = book.spine;
             for (let i = 0; i < spine.length; i++) {
@@ -168,40 +191,30 @@
             document.getElementById('metaTotal').innerText = total;
             document.getElementById('startRange').max = total;
             document.getElementById('endRange').max = total;
-            document.getElementById('endRange').value = Math.min(5, total);
-            document.getElementById('bookMeta').style.display = "block";
-            renderPreview();
-            updateDBStats();
-            document.getElementById('status').innerText = "Analiz tamamlandı!";
+            document.getElementById('endRange').value = Math.min(3, total);
+            document.getElementById('bookMeta').style.display = "inline-block";
+            renderPreview(); updateDBStats();
+            document.getElementById('status').innerText = "Analiz Tamamlandı!";
         };
         reader.readAsArrayBuffer(file);
     }
 
     function renderPreview() {
         const preview = document.getElementById('previewContent');
-        preview.innerHTML = finalChapters.map((c, i) => 
-            `<div style="border-bottom:1px solid var(--border); padding:8px;">
-                <b>#${i+1} - ${c.title}</b><br>
-                <i style="color:gray;">${c.content.substring(0, 80)}...</i>
-            </div>`
-        ).join('');
+        preview.innerHTML = finalChapters.map((c, i) => `<div style="border-bottom:1px solid var(--border); padding:8px;"><b>#${i+1} - ${c.title}</b><br><i style="color:gray;">${c.content.substring(0, 80)}...</i></div>`).join('');
     }
 
-    // --- ÇEVİRİ SÜRECİ ---
     async function processTranslation() {
         const startVal = parseInt(document.getElementById('startRange').value);
         const endVal = parseInt(document.getElementById('endRange').value);
-        if(startVal > endVal) return alert("Hatalı aralık!");
-        
+        if(startVal > endVal) return alert("Hatalı!");
         const statusBox = document.getElementById('status');
         statusBox.classList.remove('blink');
         document.getElementById('startBtn').disabled = true;
-
         for (let i = startVal-1; i <= endVal-1; i++) {
             const exists = await db.translations.where({bookTitle: bookTitle, index: i}).first();
             if(exists) continue;
-
-            statusBox.innerText = `⏳ ${finalChapters[i].title} çevriliyor...`;
+            statusBox.innerText = `⏳ İşleniyor: ${finalChapters[i].title}`;
             const miniChunks = finalChapters[i].content.match(/[\s\S]{1,1500}/g) || [];
             let translated = "";
             for(let mini of miniChunks) {
@@ -212,10 +225,8 @@
             updateDBStats();
             document.getElementById('progress').style.width = ((i - (startVal-1) + 1) / (endVal - startVal + 1) * 100) + "%";
         }
-
         statusBox.innerText = "✅ ARALIK BAŞARIYLA TAMAMLANDI!";
-        statusBox.classList.add('blink');
-        playSuccessSound();
+        statusBox.classList.add('blink'); playSuccessSound();
         document.getElementById('startBtn').disabled = false;
     }
 
@@ -226,22 +237,17 @@
 
     async function updateDBStats() {
         const all = await db.translations.where({bookTitle: bookTitle}).toArray();
-        document.getElementById('dbStats').innerHTML = `<b>Hafıza:</b> ${all.length} parça kaydedildi.`;
+        document.getElementById('dbStats').innerHTML = `<b>Hafıza:</b> ${all.length} parça mevcut.`;
         document.getElementById('chapterBadges').innerHTML = all.sort((a,b)=>a.index-b.index).map(c => `<span class="badge">${c.title}</span>`).join('');
     }
 
-    async function deleteDatabase() {
-        if(confirm("Tüm veriler silinecek?")) { await db.translations.clear(); location.reload(); }
-    }
+    async function deleteDatabase() { if(confirm("Tüm kayıtlar silinecek?")) { await db.translations.clear(); location.reload(); } }
 
-    // --- EPUB PAKETLEME ---
     async function generateEpub() {
         const all = await db.translations.where({bookTitle: bookTitle}).sortBy('index');
-        if(all.length === 0) return alert("Hafıza boş!");
-        const zip = new JSZip();
-        zip.file("mimetype", "application/epub+zip", {compression: "STORE"});
-        const oebps = zip.folder("OEBPS");
-        zip.folder("META-INF").file("container.xml", `<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`);
+        if(all.length === 0) return alert("Boş!");
+        const zip = new JSZip(); zip.file("mimetype", "application/epub+zip", {compression: "STORE"});
+        const oebps = zip.folder("OEBPS"); zip.folder("META-INF").file("container.xml", `<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`);
         let manifest = ""; let spine = "";
         all.forEach((ch, i) => {
             const fileName = `ch_${ch.index}.xhtml`;
@@ -254,7 +260,7 @@
         const ncx = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>${all.map((c,i)=>`<navPoint id="n${i}" playOrder="${i+1}"><navLabel><text>${c.title}</text></navLabel><content src="ch_${c.index}.xhtml"/></navPoint>`).join('')}</navMap></ncx>`;
         oebps.file("toc.ncx", ncx);
         const blob = await zip.generateAsync({type: "blob"});
-        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `${bookTitle}_Turkce.epub`; link.click();
+        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `${bookTitle}_TR.epub`; link.click();
     }
 </script>
 </body>
