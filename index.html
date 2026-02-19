@@ -28,14 +28,12 @@
 
         .top-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
 
-        /* MOBİL DÜZENLEMELER */
         @media (max-width: 850px) {
             body { flex-direction: column; padding: 10px; }
             .main-panel, .preview-panel { width: 100% !important; height: auto !important; }
             .preview-panel { height: 400px !important; }
             .top-row { justify-content: center; }
             .custom-file-upload { width: 100% !important; }
-            /* Mobilde buton metnini kısaltan ayar */
             .theme-text { display: none; } 
         }
 
@@ -61,7 +59,10 @@
             text-decoration: none;
         }
 
-        button:hover, .custom-file-upload:hover { transform: translateY(-2px); box-shadow: 0 8px 15px var(--shadow); }
+        button:hover, .custom-file-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px var(--shadow);
+        }
 
         .btn-blue, .custom-file-upload { background: var(--accent); color: white; }
         .btn-green { background: #27ae60; color: white; }
@@ -82,11 +83,12 @@
         
         .badge { display: inline-block; background: #34495e; color: white; padding: 3px 8px; border-radius: 10px; font-size: 11px; margin: 2px; }
 
-        /* Geniş Rehber Bölümü */
+        /* Sabitlenen Geniş Rehber Bölümü */
         .guide-container { margin-top: auto; padding-top: 20px; }
         .guide-box { padding: 20px; background: #fffdf0; border: 1px solid #f1e7bc; border-radius: 12px; font-size: 14px; color: #444; line-height: 1.6; }
         [data-theme="dark"] .guide-box { background: #2a2822; border-color: #444; color: #ccc; }
         .guide-box h4 { margin: 0 0 12px 0; color: #856404; font-size: 16px; border-bottom: 1px solid #f1e7bc; padding-bottom: 5px; }
+        [data-theme="dark"] .guide-box h4 { color: #d4af37; border-color: #555; }
     </style>
 </head>
 <body>
@@ -94,9 +96,7 @@
 <div class="main-panel">
     <div class="header-row">
         <span class="brand-name">BookBridge</span>
-        <button class="btn-theme" onclick="toggleTheme()">
-            🌓 <span class="theme-text">Gece/Gündüz</span> Mod
-        </button>
+        <button class="btn-theme" onclick="toggleTheme()">🌓 <span class="theme-text">Gece/Gündüz</span> Mod</button>
     </div>
 
     <div class="top-row">
@@ -134,6 +134,9 @@
                 <li><b>Hafıza:</b> Çeviriler <b>IndexedDB</b>'ye kaydedilir. Sayfayı kapatsanız da silinmez.</li>
                 <li><b>EPUB Oluştur:</b> Hafızadaki tüm bölümleri tek bir Türkçe EPUB yapmak için yeşil butonu kullanın.</li>
             </ul>
+            <p style="margin: 10px 0 0 0; font-size: 12px; color: #856404; font-style: italic; border-top: 1px solid rgba(133,100,4,0.1); padding-top: 10px;">
+                <b>İpucu:</b> Google engeli almamak için her 5 bölümden sonra kısa bir mola verin. Hata alırsanız internetinizi yenileyip devam edebilirsiniz.
+            </p>
         </div>
     </div>
 </div>
@@ -151,7 +154,6 @@
 </div>
 
 <script>
-    // Önceki fonksiyonların (Dexie, Analiz, Çeviri, Paketleme) tamamı burada yer alıyor.
     const db = new Dexie("SmartEpubDB_V2");
     db.version(1).stores({ translations: '++id, bookTitle, index, title, content' });
     let finalChapters = []; let bookTitle = ""; const MAX_CHUNK_SIZE = 8000;
@@ -245,7 +247,7 @@
 
     async function generateEpub() {
         const all = await db.translations.where({bookTitle: bookTitle}).sortBy('index');
-        if(all.length === 0) return alert("Boş!");
+        if(all.length === 0) return alert("Hafıza boş!");
         const zip = new JSZip(); zip.file("mimetype", "application/epub+zip", {compression: "STORE"});
         const oebps = zip.folder("OEBPS"); zip.folder("META-INF").file("container.xml", `<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`);
         let manifest = ""; let spine = "";
@@ -259,8 +261,23 @@
         oebps.file("content.opf", opf);
         const ncx = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>${all.map((c,i)=>`<navPoint id="n${i}" playOrder="${i+1}"><navLabel><text>${c.title}</text></navLabel><content src="ch_${c.index}.xhtml"/></navPoint>`).join('')}</navMap></ncx>`;
         oebps.file("toc.ncx", ncx);
-        const blob = await zip.generateAsync({type: "blob"});
-        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `${bookTitle}_TR.epub`; link.click();
+
+        const blob = await zip.generateAsync({
+            type: "blob",
+            mimeType: "application/epub+zip"
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${bookTitle.replace(/\s+/g, '_')}_TR.epub`;
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        }, 100);
     }
 </script>
 </body>
