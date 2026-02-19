@@ -10,24 +10,9 @@
     <style>
         :root { --bg: #f0f2f5; --panel: #ffffff; --text: #2c3e50; --border: #ddd; --accent: #3498db; --shadow: rgba(0,0,0,0.1); }
         [data-theme="dark"] { --bg: #1a1a1a; --panel: #2d2d2d; --text: #e0e0e0; --border: #444; --shadow: rgba(0,0,0,0.5); }
-
         * { box-sizing: border-box; }
-
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background: var(--bg); 
-            color: var(--text); 
-            display: flex; 
-            flex-direction: row; 
-            gap: 20px; 
-            transition: 0.3s;
-            overflow-x: hidden;
-        }
-
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: var(--bg); color: var(--text); display: flex; flex-direction: row; gap: 20px; transition: 0.3s; overflow-x: hidden; }
         .top-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
-
         @media (max-width: 850px) {
             body { flex-direction: column; padding: 10px; }
             .main-panel, .preview-panel { width: 100% !important; height: auto !important; }
@@ -36,59 +21,30 @@
             .custom-file-upload { width: 100% !important; }
             .theme-text { display: none; } 
         }
-
         .main-panel { flex: 2; background: var(--panel); padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px var(--shadow); display: flex; flex-direction: column; min-height: 90vh; }
         .preview-panel { flex: 1; background: var(--panel); padding: 20px; border-radius: 15px; border: 1px solid var(--border); height: 90vh; overflow-y: auto; font-size: 13px; }
-        
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--bg); padding-bottom: 15px; }
         .brand-name { font-size: 1.8rem; font-weight: 800; color: var(--accent); letter-spacing: -1px; }
-
         .controls { background: var(--bg); padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid var(--border); }
-        
-        button, .custom-file-upload { 
-            padding: 10px 20px; 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 8px; 
-            font-weight: 600; 
-            transition: all 0.2s ease; 
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px var(--shadow);
-            text-decoration: none;
-        }
-
-        button:hover, .custom-file-upload:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px var(--shadow);
-        }
-
+        button, .custom-file-upload { padding: 10px 20px; cursor: pointer; border: none; border-radius: 8px; font-weight: 600; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px var(--shadow); text-decoration: none; }
+        button:hover, .custom-file-upload:hover { transform: translateY(-2px); box-shadow: 0 8px 15px var(--shadow); }
         .btn-blue, .custom-file-upload { background: var(--accent); color: white; }
         .btn-green { background: #27ae60; color: white; }
         .btn-theme { background: #9b59b6; color: white; font-size: 13px; padding: 8px 15px; gap: 5px; }
-        
         #fileInput { display: none; }
         .custom-file-upload { background: #34495e; width: auto; }
-
         .status-box { padding: 12px; background: #e8f4fd; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid var(--accent); font-weight: 500; }
         .progress-bar { height: 10px; background: #eee; border-radius: 10px; overflow: hidden; margin: 10px 0; }
         .progress-fill { height: 100%; background: #27ae60; width: 0%; transition: 0.3s; }
-        
         @keyframes blink-success { 0% { background: #e8f4fd; } 50% { background: #27ae60; color: white; } 100% { background: #e8f4fd; } }
         .blink { animation: blink-success 1s linear 5; }
-
         .button-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         input[type="number"] { width: 55px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--text); text-align: center; }
-        
         .badge { display: inline-block; background: #34495e; color: white; padding: 3px 8px; border-radius: 10px; font-size: 11px; margin: 2px; }
-
-        /* Sabitlenen Geniş Rehber Bölümü */
         .guide-container { margin-top: auto; padding-top: 20px; }
         .guide-box { padding: 20px; background: #fffdf0; border: 1px solid #f1e7bc; border-radius: 12px; font-size: 14px; color: #444; line-height: 1.6; }
         [data-theme="dark"] .guide-box { background: #2a2822; border-color: #444; color: #ccc; }
         .guide-box h4 { margin: 0 0 12px 0; color: #856404; font-size: 16px; border-bottom: 1px solid #f1e7bc; padding-bottom: 5px; }
-        [data-theme="dark"] .guide-box h4 { color: #d4af37; border-color: #555; }
     </style>
 </head>
 <body>
@@ -98,16 +54,11 @@
         <span class="brand-name">BookBridge</span>
         <button class="btn-theme" onclick="toggleTheme()">🌓 <span class="theme-text">Gece/Gündüz</span> Mod</button>
     </div>
-
     <div class="top-row">
         <label for="fileInput" class="custom-file-upload">📂 EPUB Dosyası Seç</label>
         <input type="file" id="fileInput" accept=".epub" onchange="loadAndAnalyzeEpub()">
-        
-        <div id="bookMeta" style="display:none; font-size: 14px;">
-            <strong>📖 Kitap:</strong> <span id="metaTitle">-</span> | <strong>📑 Parça:</strong> <span id="metaTotal">-</span>
-        </div>
+        <div id="bookMeta" style="display:none; font-size: 14px;"><strong>📖 Kitap:</strong> <span id="metaTitle">-</span> | <strong>📑 Toplam Parça:</strong> <span id="metaTotal">-</span></div>
     </div>
-
     <div class="controls">
         <div class="button-row">
             Aralık: <input type="number" id="startRange" value="1" min="1"> - <input type="number" id="endRange" value="1" min="1">
@@ -115,15 +66,11 @@
             <button class="btn-green" onclick="generateEpub()">Çevirisi Tamamlananlardan Epub Oluştur</button>
         </div>
     </div>
-
     <div id="status" class="status-box">Lütfen bir dosya seçin...</div>
     <div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
-    
     <div id="dbStats" style="margin-bottom: 5px; font-size: 14px;"></div>
     <div id="chapterBadges"></div>
-    
-    <button onclick="deleteDatabase()" style="background:none; border:none; color: #e74c3c; cursor:pointer; font-size:11px; text-decoration:underline; width:fit-content; margin: 10px 0; box-shadow:none; transform:none;">Veritabanını Sıfırla</button>
-
+    <button onclick="deleteDatabase()" style="background:none; border:none; color: #e74c3c; cursor:pointer; font-size:11px; text-decoration:underline; width:fit-content; margin: 10px 0;">Veritabanını Sıfırla</button>
     <div class="guide-container">
         <div class="guide-box">
             <h4>🚀 Hızlı Kullanım Rehberi</h4>
@@ -132,68 +79,53 @@
                 <li><b>Aralık Belirle:</b> Tek seferde 3-5 bölüm çevirmeniz önerilir (Örn: 1-5). Bu, Google limitlerine takılmanızı önler.</li>
                 <li><b>Çeviriyi Başlat:</b> Butona basın ve bekleyin. İşlem bitince <b>sesli ve görsel uyarı</b> alacaksınız.</li>
                 <li><b>Hafıza:</b> Çeviriler <b>IndexedDB</b>'ye kaydedilir. Sayfayı kapatsanız da silinmez.</li>
-                <li><b>EPUB Oluştur:</b> Hafızadaki tüm bölümleri tek bir Türkçe EPUB yapmak için yeşil butonu kullanın.</li>
+                <li><b>EPUB Oluştur:</b> Hafızadaki bölümleri orijinal başlıkları altında birleştirerek Türkçe EPUB üretir.</li>
             </ul>
-            <p style="margin: 10px 0 0 0; font-size: 12px; color: #856404; font-style: italic; border-top: 1px solid rgba(133,100,4,0.1); padding-top: 10px;">
-                <b>İpucu:</b> Google engeli almamak için her 5 bölümden sonra kısa bir mola verin. Hata alırsanız internetinizi yenileyip devam edebilirsiniz.
-            </p>
         </div>
     </div>
 </div>
 
-<div class="preview-panel">
-    <div class="header-row">
-        <h3 style="margin:0;">🔍 Yapı Analizi</h3>
-        <select onchange="document.getElementById('previewContent').style.fontSize = this.value">
-            <option value="13px">Küçük Font</option>
-            <option value="16px">Orta Font</option>
-            <option value="18px">Büyük Font</option>
-        </select>
-    </div>
-    <div id="previewContent">Analiz sonuçları burada görünecek.</div>
-</div>
+<div class="preview-panel"><div class="header-row"><h3 style="margin:0;">🔍 Yapı Analizi</h3><select onchange="document.getElementById('previewContent').style.fontSize = this.value"><option value="13px">Küçük</option><option value="16px">Orta</option><option value="20px">Büyük</option></select></div><div id="previewContent">Analiz sonuçları burada görünecek.</div></div>
 
 <script>
     const db = new Dexie("SmartEpubDB_V2");
-    db.version(1).stores({ translations: '++id, bookTitle, index, title, content' });
+    db.version(1).stores({ translations: '++id, bookTitle, index, title, content, parentIndex' });
     let finalChapters = []; let bookTitle = ""; const MAX_CHUNK_SIZE = 8000;
 
-    function playSuccessSound() {
-        try { const context = new (window.AudioContext || window.webkitAudioContext)(); const oscillator = context.createOscillator(); const gain = context.createGain(); oscillator.connect(gain); gain.connect(context.destination); oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(880, context.currentTime); gain.gain.setValueAtTime(0.05, context.currentTime); oscillator.start(); oscillator.stop(context.currentTime + 0.3); } catch(e) {}
-    }
-
+    function playSuccessSound() { try { const context = new (window.AudioContext || window.webkitAudioContext)(); const oscillator = context.createOscillator(); const gain = context.createGain(); oscillator.connect(gain); gain.connect(context.destination); oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(880, context.currentTime); gain.gain.setValueAtTime(0.05, context.currentTime); oscillator.start(); oscillator.stop(context.currentTime + 0.3); } catch(e) {} }
     function toggleTheme() { const body = document.body; body.setAttribute('data-theme', body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
 
     async function loadAndAnalyzeEpub() {
-        const file = document.getElementById('fileInput').files[0];
-        if(!file) return;
+        const file = document.getElementById('fileInput').files[0]; if(!file) return;
         const reader = new FileReader();
         reader.onload = async (e) => {
-            const book = ePub(e.target.result);
-            await book.ready;
+            const book = ePub(e.target.result); await book.ready;
             bookTitle = book.package.metadata.title || "Adsiz_Kitap";
             document.getElementById('metaTitle').innerText = bookTitle;
-            finalChapters = [];
-            const spine = book.spine;
+            finalChapters = []; const spine = book.spine;
             for (let i = 0; i < spine.length; i++) {
-                const section = spine.get(i);
-                await section.load(book.load.bind(book));
+                const section = spine.get(i); await section.load(book.load.bind(book));
                 const text = section.document.body.innerText;
+                const originalTitle = `Bölüm ${i+1}`;
                 if (text.length > MAX_CHUNK_SIZE) {
                     const subChunks = text.match(new RegExp('[\\s\\S]{1,' + MAX_CHUNK_SIZE + '}', 'g')) || [];
                     subChunks.forEach((chunk, subIdx) => {
-                        finalChapters.push({ index: i, subIdx: subIdx, title: `Bölüm ${i+1}.${subIdx+1}`, content: chunk });
+                        finalChapters.push({ 
+                            index: i, subIdx: subIdx, 
+                            title: `${originalTitle}.${subIdx+1}`, 
+                            parentTitle: originalTitle,
+                            content: chunk 
+                        });
                     });
                 } else {
-                    finalChapters.push({ index: i, subIdx: 0, title: `Bölüm ${i+1}`, content: text });
+                    finalChapters.push({ index: i, subIdx: 0, title: originalTitle, parentTitle: originalTitle, content: text });
                 }
                 section.unload();
             }
-            const total = finalChapters.length;
-            document.getElementById('metaTotal').innerText = total;
-            document.getElementById('startRange').max = total;
-            document.getElementById('endRange').max = total;
-            document.getElementById('endRange').value = Math.min(3, total);
+            document.getElementById('metaTotal').innerText = finalChapters.length;
+            document.getElementById('startRange').max = finalChapters.length;
+            document.getElementById('endRange').max = finalChapters.length;
+            document.getElementById('endRange').value = Math.min(3, finalChapters.length);
             document.getElementById('bookMeta').style.display = "inline-block";
             renderPreview(); updateDBStats();
             document.getElementById('status').innerText = "Analiz Tamamlandı!";
@@ -201,17 +133,13 @@
         reader.readAsArrayBuffer(file);
     }
 
-    function renderPreview() {
-        const preview = document.getElementById('previewContent');
-        preview.innerHTML = finalChapters.map((c, i) => `<div style="border-bottom:1px solid var(--border); padding:8px;"><b>#${i+1} - ${c.title}</b><br><i style="color:gray;">${c.content.substring(0, 80)}...</i></div>`).join('');
-    }
+    function renderPreview() { document.getElementById('previewContent').innerHTML = finalChapters.map((c, i) => `<div style="border-bottom:1px solid var(--border); padding:8px;"><b>#${i+1} - ${c.title}</b><br><i style="color:gray;">${c.content.substring(0, 80)}...</i></div>`).join(''); }
 
     async function processTranslation() {
         const startVal = parseInt(document.getElementById('startRange').value);
         const endVal = parseInt(document.getElementById('endRange').value);
-        if(startVal > endVal) return alert("Hatalı!");
-        const statusBox = document.getElementById('status');
-        statusBox.classList.remove('blink');
+        if(startVal > endVal) return;
+        const statusBox = document.getElementById('status'); statusBox.classList.remove('blink');
         document.getElementById('startBtn').disabled = true;
         for (let i = startVal-1; i <= endVal-1; i++) {
             const exists = await db.translations.where({bookTitle: bookTitle, index: i}).first();
@@ -219,16 +147,18 @@
             statusBox.innerText = `⏳ İşleniyor: ${finalChapters[i].title}`;
             const miniChunks = finalChapters[i].content.match(/[\s\S]{1,1500}/g) || [];
             let translated = "";
-            for(let mini of miniChunks) {
-                translated += await translateAPI(mini) + " ";
-                await new Promise(r => setTimeout(r, 1000));
-            }
-            await db.translations.add({ bookTitle: bookTitle, index: i, title: finalChapters[i].title, content: translated });
+            for(let mini of miniChunks) { translated += await translateAPI(mini) + " "; await new Promise(r => setTimeout(r, 1000)); }
+            await db.translations.add({ 
+                bookTitle: bookTitle, index: i, 
+                title: finalChapters[i].title, 
+                parentTitle: finalChapters[i].parentTitle,
+                parentIndex: finalChapters[i].index,
+                content: translated 
+            });
             updateDBStats();
             document.getElementById('progress').style.width = ((i - (startVal-1) + 1) / (endVal - startVal + 1) * 100) + "%";
         }
-        statusBox.innerText = "✅ ARALIK BAŞARIYLA TAMAMLANDI!";
-        statusBox.classList.add('blink'); playSuccessSound();
+        statusBox.innerText = "✅ ARALIK BAŞARIYLA TAMAMLANDI!"; statusBox.classList.add('blink'); playSuccessSound();
         document.getElementById('startBtn').disabled = false;
     }
 
@@ -246,38 +176,50 @@
     async function deleteDatabase() { if(confirm("Tüm kayıtlar silinecek?")) { await db.translations.clear(); location.reload(); } }
 
     async function generateEpub() {
-        const all = await db.translations.where({bookTitle: bookTitle}).sortBy('index');
-        if(all.length === 0) return alert("Hafıza boş!");
-        const zip = new JSZip(); zip.file("mimetype", "application/epub+zip", {compression: "STORE"});
-        const oebps = zip.folder("OEBPS"); zip.folder("META-INF").file("container.xml", `<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`);
-        let manifest = ""; let spine = "";
-        all.forEach((ch, i) => {
-            const fileName = `ch_${ch.index}.xhtml`;
-            oebps.file(fileName, `<?xml version="1.0" encoding="utf-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>${ch.title}</title></head><body><h2>${ch.title}</h2><p>${ch.content.replace(/\n/g, '<br/>')}</p></body></html>`);
-            manifest += `<item id="i${ch.index}" href="${fileName}" media-type="application/xhtml+xml"/>\n`;
-            spine += `<itemref idref="i${ch.index}"/>\n`;
+        const allTranslated = await db.translations.where({bookTitle: bookTitle}).sortBy('index');
+        if(allTranslated.length === 0) return alert("Hafıza boş!");
+
+        // Akıllı Birleştirme Mantığı
+        const mergedChapters = [];
+        allTranslated.forEach(item => {
+            let existing = mergedChapters.find(m => m.parentIndex === item.parentIndex);
+            if (existing) {
+                existing.content += "<br/><br/>" + item.content;
+            } else {
+                mergedChapters.push({
+                    parentIndex: item.parentIndex,
+                    parentTitle: item.parentTitle,
+                    content: item.content
+                });
+            }
         });
+
+        const zip = new JSZip();
+        zip.file("mimetype", "application/epub+zip", {compression: "STORE"});
+        const oebps = zip.folder("OEBPS");
+        zip.folder("META-INF").file("container.xml", `<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`);
+        
+        let manifest = ""; let spine = "";
+        mergedChapters.forEach((ch, i) => {
+            const fileName = `ch_${ch.parentIndex}.xhtml`;
+            oebps.file(fileName, `<?xml version="1.0" encoding="utf-8"?><!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>${ch.parentTitle}</title></head><body><h2>${ch.parentTitle}</h2><p>${ch.content.replace(/\n/g, '<br/>')}</p></body></html>`);
+            manifest += `<item id="i${ch.parentIndex}" href="${fileName}" media-type="application/xhtml+xml"/>\n`;
+            spine += `<itemref idref="i${ch.parentIndex}"/>\n`;
+        });
+
         const opf = `<?xml version="1.0" encoding="utf-8"?><package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${bookTitle} (TR)</dc:title><dc:language>tr</dc:language></metadata><manifest>${manifest}<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/></manifest><spine toc="ncx">${spine}</spine></package>`;
         oebps.file("content.opf", opf);
-        const ncx = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>${all.map((c,i)=>`<navPoint id="n${i}" playOrder="${i+1}"><navLabel><text>${c.title}</text></navLabel><content src="ch_${c.index}.xhtml"/></navPoint>`).join('')}</navMap></ncx>`;
+        const ncx = `<?xml version="1.0" encoding="UTF-8"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap>${mergedChapters.map((c,i)=>`<navPoint id="n${i}" playOrder="${i+1}"><navLabel><text>${c.parentTitle}</text></navLabel><content src="ch_${c.parentIndex}.xhtml"/></navPoint>`).join('')}</navMap></ncx>`;
         oebps.file("toc.ncx", ncx);
 
-        const blob = await zip.generateAsync({
-            type: "blob",
-            mimeType: "application/epub+zip"
-        });
-
+        const blob = await zip.generateAsync({ type: "blob", mimeType: "application/epub+zip" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
         link.download = `${bookTitle.replace(/\s+/g, '_')}_TR.epub`;
         document.body.appendChild(link);
         link.click();
-        
-        setTimeout(() => {
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-        }, 100);
+        setTimeout(() => { document.body.removeChild(link); window.URL.revokeObjectURL(url); }, 100);
     }
 </script>
 </body>
